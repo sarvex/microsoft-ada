@@ -37,7 +37,7 @@ class Sensei:
 
     def update_sequence(self, seqno):
         if self.sequence != seqno:
-            print("### new sequence {}".format(seqno))
+            print(f"### new sequence {seqno}")
             self.sequence = seqno
 
     def server_thread(self):
@@ -53,13 +53,13 @@ class Sensei:
                             response = "ok"
                             command = JSON.loads(json_msg)
                             if "command" in command and command["command"] == "ping":
-                                response = "{}".format(self.sequence)
+                                response = f"{self.sequence}"
 
                             sock.sendall(bytes(response, 'utf-8'))
 
                             self.queue.put(command)
                         except Exception as e:
-                            msg = "### Exception: {}".format(e)
+                            msg = f"### Exception: {e}"
                             sock.sendall(bytes(msg, 'utf-8'))
             except:
                 time.sleep(1)
@@ -94,12 +94,12 @@ class DmxController:
             colors = command["colors"]
             new_colors = [(x[0], x[1], x[2]) for x in colors]
         else:
-            print("### ignoring command : {}".format(command))
+            print(f"### ignoring command : {command}")
             return
 
         for i in range(0, len(new_colors)):
             if len(new_colors[i]) < NUM_LIGHTS:
-                for j in range(0, NUM_LIGHTS - len(new_colors[i])):
+                for _ in range(0, NUM_LIGHTS - len(new_colors[i])):
                     new_colors[i] += (0,)
 
         # make sure we have at least NUM_LIGHTS colors.
@@ -109,7 +109,7 @@ class DmxController:
         if args.color == "UV":
             new_colors = [[0, 0, 0, 0, 0, 255]] * NUM_LIGHTS
         # 2 second fade to new color
-        print("seq {}: {}".format(self.sensei.sequence, new_colors))
+        print(f"seq {self.sensei.sequence}: {new_colors}")
         dmx.smooth_fade(DMX_UNIVERSE, ALL_LIGHTS, self.current_colors, new_colors, 2)
         self.current_colors = new_colors
 
@@ -145,10 +145,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     server_endpoint = (args.ip, SERVER_PORT)
-    if args.test:
-        dmx = dmx_mock.Dmx(args.port)
-    else:
-        dmx = Dmx(args.port)
-
+    dmx = dmx_mock.Dmx(args.port) if args.test else Dmx(args.port)
     controller = DmxController(server_endpoint, dmx)
     controller.run_program()

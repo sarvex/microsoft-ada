@@ -60,8 +60,8 @@ class Dmx:
     def __init__(self, port_name: str):
         self.port_name = port_name
         self.open_serial()
-        self.universe_1 = list()
-        self.universe_2 = list()
+        self.universe_1 = []
+        self.universe_2 = []
 
         # THIS ONLY WORKS WITH THE ENTTEC DMX USB PRO MK2
         # self.set_api_key()
@@ -125,7 +125,7 @@ class Dmx:
             # Read encode
             end_code = self.port.read(1)[0]
             if end_code != END_CODE:
-                print_error("DMX: Invalid return end code " + str(end_code))
+                print_error(f"DMX: Invalid return end code {str(end_code)}")
                 return False
             return data
         except:
@@ -145,16 +145,14 @@ class Dmx:
     def get_serial_number(self):
         try:
             self.send_data(10)
-            serial_num = self.receive_data(10)
-            return serial_num
+            return self.receive_data(10)
         except:
             print_error('DMX: Unable to get serial number')
 
     def get_hardware_version(self):
         try:
             self.send_data(14)
-            version = self.receive_data(14)[0]
-            return version
+            return self.receive_data(14)[0]
         except:
             print_error('DMX: Unable to get hardware version')
 
@@ -165,31 +163,19 @@ class Dmx:
             self.universe_2.append(dmx_device)
 
     def set_output_by_type(self, dmx_universe: int, device_type: str, output_values):
-        if dmx_universe == 1:
-            universe = self.universe_1
-        else:
-            universe = self.universe_2
-
+        universe = self.universe_1 if dmx_universe == 1 else self.universe_2
         for device in universe:
             if device.device_type == device_type:
                 device.set_output(output_values)
 
     def set_output_by_name(self, dmx_universe: int, device_name: str, output_values):
-        if dmx_universe == 1:
-            universe = self.universe_1
-        else:
-            universe = self.universe_2
-
+        universe = self.universe_1 if dmx_universe == 1 else self.universe_2
         for device in universe:
             if device.device_name == device_name:
                 device.set_output(output_values)
 
     def send_update(self, dmx_universe: int):
-        if dmx_universe == 1:
-            universe = self.universe_1
-        else:
-            universe = self.universe_2
-
+        universe = self.universe_1 if dmx_universe == 1 else self.universe_2
         dmx_bytearray = bytearray(1)  # DMX payload needs to start with this empty byte at pos 0
 
         for dmx_device in universe:

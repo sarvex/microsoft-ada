@@ -30,14 +30,14 @@ def zipdir(path, ziph):
         for file in files:
             fullPath = os.path.join(root, file)
             relative_path = fullPath[len(path) + 1:]
-            print("zipping: " + relative_path)
+            print(f"zipping: {relative_path}")
             ziph.write(fullPath, relative_path)
             count += 1
     return count
 
 
 def create_zip(filename, folder):
-    print("Creating zip file: " + filename)
+    print(f"Creating zip file: {filename}")
     if os.path.exists(filename):
         os.remove(filename)
     with zipfile.ZipFile(filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -62,7 +62,7 @@ def upload_file(filename, container):
         container.upload_blob(filename, data, overwrite=True, validate_content=True)
 
     hashData = bytearray(hash, 'utf-8')
-    container.upload_blob(filename + ".hash", hashData, overwrite=True)
+    container.upload_blob(f"{filename}.hash", hashData, overwrite=True)
 
 
 if __name__ == '__main__':

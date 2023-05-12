@@ -17,7 +17,7 @@ with open(hexfile, "rb") as f:
     byte_key = binascii.unhexlify("414441")
     hash = hmac.new(byte_key, bytes, hashlib.sha256).hexdigest()
 
-print("Publish firmware with hash: {}".format(hash))
+print(f"Publish firmware with hash: {hash}")
 
 if not os.path.isfile(hexfile):
     print("Please build the firmware using 'code TeensyFirmware.code-workspace")

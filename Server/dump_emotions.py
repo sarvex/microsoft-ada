@@ -12,13 +12,13 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def dump_emotions(config, partition):
-    query = "FaceCount gt 0 and PartitionKey eq '" + partition + "'"
+    query = f"FaceCount gt 0 and PartitionKey eq '{partition}'"
     all_sentiments = sorted(config.colors_for_emotions.keys())
     headers = ["Timestamp"]
     for sentiment in all_sentiments:
         headers += [sentiment]
 
-    filename = partition + ".csv"
+    filename = f"{partition}.csv"
     with open(filename, "w") as log:
         log.write(",".join(headers) + "\n")
 
@@ -33,7 +33,7 @@ def dump_emotions(config, partition):
                     localtime = d.astimezone(tz.tzlocal())
                     row = [str(localtime)]
                     for sentiment in all_sentiments:
-                        key = '{}_{}'.format(x, sentiment)
+                        key = f'{x}_{sentiment}'
                         if key in entity:
                             row += [entity[key]]
                     if len(row) > 1:
@@ -42,7 +42,7 @@ def dump_emotions(config, partition):
         except Exception as e:
             print(e)
 
-    print("wrote {} records to {}".format(count, filename))
+    print(f"wrote {count} records to {filename}")
 
 
 def dump_emotions_from_all_cameras(config):

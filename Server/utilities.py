@@ -26,10 +26,9 @@ class TimedLatch:
 
     def switch(self, new_value):
         changed = False
-        if new_value:
-            if self.switch_time + self.delay < time.time():
-                # delay has elapsed, so it is ok to turn it on again.
-                self.switch_time = time.time()
-                self.on = True
-                changed = True
+        if new_value and self.switch_time + self.delay < time.time():
+            # delay has elapsed, so it is ok to turn it on again.
+            self.switch_time = time.time()
+            self.on = True
+            changed = True
         return changed

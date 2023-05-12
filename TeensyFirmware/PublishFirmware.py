@@ -28,7 +28,7 @@ def upload_file(filename, blob_container_name):
         byte_key = binascii.unhexlify("414441")
         hash = hmac.new(byte_key, bytes, hashlib.sha256).hexdigest()
 
-    print("Publish firmware with hash: {}".format(hash))
+    print(f"Publish firmware with hash: {hash}")
 
     service = BlobServiceClient.from_connection_string(conn_str=connection_string)
 
@@ -40,7 +40,7 @@ def upload_file(filename, blob_container_name):
         container.upload_blob(filename, data, overwrite=True)
 
     data = bytearray(hash, 'utf-8')
-    container.upload_blob(filename + ".hash", data, overwrite=True)
+    container.upload_blob(f"{filename}.hash", data, overwrite=True)
     print("Success")
 
 

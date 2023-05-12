@@ -22,7 +22,7 @@ class AnimationLoop:
         Start the given animation with a maximum timeout in seconds.
         If timeout is 0 it could run forever, depending on the animation.
         """
-        print("### playing animation: {}".format(animation["Name"]))
+        print(f'### playing animation: {animation["Name"]}')
         self.animation = animation
         self.animation_index = 0
         self.next_animation = time.time()
@@ -68,11 +68,16 @@ class AnimationLoop:
                     duration = timeout
                 if "start" in c and c["start"] == "after-previous":
                     break
-            if self.animation_index == len(commands):
-                if "repeat" in self.animation and self.animation["repeat"] == "forever":
-                    self.animation_index = 0
+            if (
+                self.animation_index == len(commands)
+                and "repeat" in self.animation
+                and self.animation["repeat"] == "forever"
+            ):
+                self.animation_index = 0
 
         self.next_animation = time.time() + duration
         if result:
-            print("Running animation '{}', step {} for {} seconds".format(self.animation['Name'], self.animation_index, duration))
+            print(
+                f"Running animation '{self.animation['Name']}', step {self.animation_index} for {duration} seconds"
+            )
         return result

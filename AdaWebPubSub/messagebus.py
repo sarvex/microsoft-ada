@@ -47,7 +47,7 @@ class WebPubSubGroup:
                 self.connection_id = response["connectionId"]
             print("WebSocket connected")
         except Exception as e:
-            print("### web socket connect failed: " + e)
+            print(f"### web socket connect failed: {e}")
             self.web_socket = None
             await asyncio.sleep(10)
         return

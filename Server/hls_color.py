@@ -9,8 +9,7 @@ class HlsColor:
 
     def Lighten(self, percent):
         self.luminance *= (1.0 + percent)
-        if self.luminance > 1.0:
-            self.luminance = 1.0
+        self.luminance = min(self.luminance, 1.0)
 
     def Darken(self, percent):
         self.luminance *= (1.0 - percent)
@@ -74,17 +73,17 @@ class HlsColor:
 
         return [red, green, blue]
 
-    def ToRGB1(rm1, rm2, rh):
+    def ToRGB1(self, rm2, rh):
         if (rh > 360.0):
             rh -= 360.0
         elif rh < 0.0:
             rh += 360.0
 
         if rh < 60.0:
-            rm1 = rm1 + (rm2 - rm1) * rh / 60.0
+            self = self + (rm2 - self) * rh / 60.0
         elif rh < 180.0:
-            rm1 = rm2
+            self = rm2
         elif rh < 240.0:
-            rm1 = rm1 + (rm2 - rm1) * (240.0 - rh) / 60.0
+            self = self + (rm2 - self) * (240.0 - rh) / 60.0
 
-        return int(rm1 * 255)
+        return int(self * 255)

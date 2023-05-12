@@ -27,9 +27,9 @@ class TeensyFirmwareUpdater:
 
     def download_thread(self):
         while self.url:
-            hex_uri = self.url + "/" + self.blob_name
-            hash_uri = hex_uri + ".hash"
-            hash_file = self.filename + ".hash"
+            hex_uri = f"{self.url}/{self.blob_name}"
+            hash_uri = f"{hex_uri}.hash"
+            hash_file = f"{self.filename}.hash"
 
             self.download_blob(hash_uri, hash_file)
             hash = self.read_hash(hash_file)
@@ -57,8 +57,7 @@ class TeensyFirmwareUpdater:
 
     def get_firmware(self):
         with open(self.filename, "rb") as f:
-            bytes = f.read()
-            return bytes
+            return f.read()
 
     def download_blob(self, url, filename):
         response = requests.get(url, stream=True)

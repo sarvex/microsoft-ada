@@ -79,16 +79,14 @@ class LightingDesigner:
 
     def _master_power_on(self):
         print("### turning on the lights...")
-        bridge = self.server.get_bridge()
-        if bridge:
+        if bridge := self.server.get_bridge():
             bridge.turn_on_lights()
         self.server.camera_on()
         self.msgbus.send('/state/on')
 
     def _master_power_off(self):
         print("### turning off the lights...")
-        bridge = self.server.get_bridge()
-        if bridge:
+        if bridge := self.server.get_bridge():
             bridge.turn_off_lights()
         self.server.camera_off()
         self.msgbus.send('/state/off')
@@ -101,16 +99,12 @@ class LightingDesigner:
         sunrise = sun.get_local_sunrise_time()
         if setting == "sunrise":
             return [sunrise.hour, sunrise.minute]
-        if setting == "sunset":
-            return [sunset.hour, sunset.minute]
-        return setting
+        return [sunset.hour, sunset.minute] if setting == "sunset" else setting
 
     def is_on_today(self):
         run_days = self.config.on_days
-        today = datetime.today().strftime('%A')
-        if today in run_days:
-            return True
-        return False
+        today = datetime.now().strftime('%A')
+        return today in run_days
 
     def _find_animation(self, name):
         for index in range(len(self.config.cool_animations)):
@@ -186,14 +180,11 @@ class LightingDesigner:
             self.power_state == "on"
             self.msgbus.send('/state/rebooted')
         else:
-            print("error: invalid power state: /power/{}".format(option))
+            print(f"error: invalid power state: /power/{option}")
 
     def _rain_command(self, option):
         if option == "toggle":
-            if self.is_raining:
-                option = "off"
-            else:
-                option = "on"
+            option = "off" if self.is_raining else "on"
         if option == "on":
             self._set_power_state("custom")
             self.server.queue_command(0, {"command": "StartRain", "size": 12, "amount": 50.0})
@@ -204,7 +195,7 @@ class LightingDesigner:
             self.is_raining = False
             self.stop_rain_time = None
         else:
-            print("error: invalid rain command: /rain/{}".format(option))
+            print(f"error: invalid rain command: /rain/{option}")
 
     def process_next_message(self):
         item = self.msgqueue.dequeue()

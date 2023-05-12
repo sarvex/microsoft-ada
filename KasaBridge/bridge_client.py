@@ -24,7 +24,7 @@ class KasaBridgeClient:
         if response == "ok":
             self.lights_on = True
         else:
-            msg = "Failed to turn on the lights: {}".format(response)
+            msg = f"Failed to turn on the lights: {response}"
             print(msg)
             self.bridge_error = msg
 
@@ -36,7 +36,7 @@ class KasaBridgeClient:
         if response == "ok":
             self.lights_on = False
         else:
-            msg = "Failed to turn off the lights: {}".format(response)
+            msg = f"Failed to turn off the lights: {response}"
             print(msg)
             self.bridge_error = msg
 
@@ -77,8 +77,7 @@ class KasaBridgeClient:
             retries = 10
             while retries > 0 and self.client:
                 retries -= 1
-                response = str(self.client.recv(16000), "utf-8")
-                if response:
+                if response := str(self.client.recv(16000), "utf-8"):
                     return response
         return "no response"
 

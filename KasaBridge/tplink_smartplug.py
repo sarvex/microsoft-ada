@@ -93,11 +93,14 @@ class TplinkSmartPlug(object):
                             info = sys["get_sysinfo"]
                             if info is not None and "model" in info:
                                 model = info["model"]
-                                if model is not None:
-                                    if "HS105" in model or "HS103" in model or "EP10" in model:
-                                        ip = addr[0]
-                                        if ip not in result:
-                                            result += [ip]
+                                if model is not None and (
+                                    "HS105" in model
+                                    or "HS103" in model
+                                    or "EP10" in model
+                                ):
+                                    ip = addr[0]
+                                    if ip not in result:
+                                        result += [ip]
             except socket.timeout:
                 # send another one in case a switch missed the previous UDP broadcast.
                 if len(result) > 0:
@@ -121,25 +124,21 @@ class TplinkSmartPlug(object):
         return self.info
 
     def turn_on(self):
-        retries = 5
-        while retries > 0:
+        for _ in range(5, 0, -5):
             result = self.send_command("on")
             time.sleep(0.5)
             self.get_info()
             if self.is_on:
                 return
-            retries -= 5
         return result
 
     def turn_off(self):
-        retries = 5
-        while retries > 0:
+        for _ in range(5, 0, -5):
             result = self.send_command("off")
             time.sleep(0.5)
             self.get_info()
             if not self.is_on:
                 return
-            retries -= 5
         return result
 
     def send_command(self, command):
@@ -181,11 +180,11 @@ if __name__ == '__main__':
     if args.find:
         if not local_ip:
             local_ip = TplinkSmartPlug.getLocalIpAddress()
-        print("Looking for HS105, HS103, and EP10 devices on network {}".format(local_ip))
+        print(f"Looking for HS105, HS103, and EP10 devices on network {local_ip}")
         found = False
         for addr in TplinkSmartPlug.findHS105Devices(local_ip):
             found = True
-            print("Found device at {}".format(addr))
+            print(f"Found device at {addr}")
         if not found:
             print("Nothing found.")
     else:

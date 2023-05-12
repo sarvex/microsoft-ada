@@ -17,10 +17,7 @@ class RemoteRunner:
         self.command = command
         self.verbose = verbose
         self.timeout = timeout
-        if logfile:
-            self.logfile = open(logfile, 'w')
-        else:
-            self.logfile = None
+        self.logfile = open(logfile, 'w') if logfile else None
         self.all = all
         self.machine = None
         self.ssh = None
@@ -29,7 +26,7 @@ class RemoteRunner:
     def connect_ssh(self):
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.print("connecting to target device at " + self.ipaddress)
+        self.print(f"connecting to target device at {self.ipaddress}")
         self.ssh.connect(self.ipaddress, username=self.username, password=self.password)
 
     def __enter__(self):
@@ -45,19 +42,17 @@ class RemoteRunner:
     def logstream(self, stream):
         try:
             while True:
-                out = stream.readline()
-                if out:
-                    msg = out.rstrip('\n')
-                    self.print(msg)
-                else:
+                if not (out := stream.readline()):
                     break
+                msg = out.rstrip('\n')
+                self.print(msg)
         except:
             errorType, value, traceback = sys.exc_info()
-            msg = "### logstream exception: %s: %s" % (str(errorType), str(value))
+            msg = f"### logstream exception: {str(errorType)}: {str(value)}"
             self.print(msg)
 
     def exec_remote_command(self, cmd):
-        self.print("remote: " + cmd)
+        self.print(f"remote: {cmd}")
         self.buffer = io.StringIO()
         try:
             stdin, stdout, stderr = self.ssh.exec_command(cmd, timeout=self.timeout)
@@ -73,7 +68,7 @@ class RemoteRunner:
 
         except:
             errorType, value, traceback = sys.exc_info()
-            msg = "### exec_remote_command exception: %s: %s" % (str(errorType), str(value))
+            msg = f"### exec_remote_command exception: {str(errorType)}: {str(value)}"
             self.print(msg)
 
         result = self.buffer.getvalue().split('\n')
@@ -97,11 +92,11 @@ class RemoteRunner:
             self.publish_bits()
             if self.command:
                 if self.target_dir:
-                    self.exec_remote_command("cd {} && chmod u+x ./{}".format(
-                        self.target_dir, self.command.split(" ")[0]))
+                    self.exec_remote_command(
+                        f'cd {self.target_dir} && chmod u+x ./{self.command.split(" ")[0]}'
+                    )
 
-                    output = self.exec_remote_command("cd {} && ./{}".format(
-                        self.target_dir, self.command))
+                    output = self.exec_remote_command(f"cd {self.target_dir} && ./{self.command}")
                 else:
                     output = self.exec_remote_command(self.command)
             self.copy_files()
@@ -124,7 +119,11 @@ class RemoteRunner:
                 self.run_command()
             except:
                 errorType, value, traceback = sys.exc_info()
-                self.print("### Unexpected Exception: " + str(errorType) + ": " + str(value) + "\n" + str(traceback))
+                self.print(
+                    f"### Unexpected Exception: {str(errorType)}: {str(value)}"
+                    + "\n"
+                    + str(traceback)
+                )
 
 
 if __name__ == "__main__":

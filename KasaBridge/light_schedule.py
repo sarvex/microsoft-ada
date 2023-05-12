@@ -40,8 +40,14 @@ class Schedule:
             time_to_sunset = sunset.replace(tzinfo=None) - now
             time_to_midnight = midnight - now
 
-            print("turning on in {} seconds".format(int(time_to_sunset.total_seconds())), flush=True)
-            print("turning off in {} seconds".format(int(time_to_midnight.total_seconds())), flush=True)
+            print(
+                f"turning on in {int(time_to_sunset.total_seconds())} seconds",
+                flush=True,
+            )
+            print(
+                f"turning off in {int(time_to_midnight.total_seconds())} seconds",
+                flush=True,
+            )
 
             if time_to_sunset.days < 0:
                 print("turning on", flush=True)
@@ -52,7 +58,7 @@ class Schedule:
                 self.turn_off()
                 seconds = int(time_to_sunset.total_seconds()) + 1
 
-            print("sleeping for {} seconds".format(seconds), flush=True)
+            print(f"sleeping for {seconds} seconds", flush=True)
             time.sleep(seconds)
 
 

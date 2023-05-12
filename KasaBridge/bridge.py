@@ -16,10 +16,10 @@ class TplinkServer:
 
     def log(self, msg):
         timestamp = datetime.datetime.now().strftime("%x %X")
-        print("{}: {}".format(timestamp, msg), flush=True)
+        print(f"{timestamp}: {msg}", flush=True)
 
     def start(self, plugs):
-        self.log("starting server on : {}".format(self.server_endpoint))
+        self.log(f"starting server on : {self.server_endpoint}")
         self.closed = False
         self.plugs = plugs
         _thread.start_new_thread(self.serve_forever, ())
@@ -44,24 +44,24 @@ class TplinkServer:
                             command = parts[0]
                             if command == "list":
                                 # return list of known tplink devices
-                                response = "{}".format(self.plugs)
-                            elif command == "on":
-                                # turn on all devices
-                                response = self.turn_all_on()
+                                response = f"{self.plugs}"
                             elif command == "off":
                                 # turn off all devices
                                 response = self.turn_all_off()
+                            elif command == "on":
+                                # turn on all devices
+                                response = self.turn_all_on()
                             elif command == "status":
                                 response = self.get_status()
                             else:
-                                response = "unknown request: " + request
+                                response = f"unknown request: {request}"
                             s.sendall(bytes(response, 'utf-8'))
                     except socket.timeout:
                         # totally normal, since out socket has a timeout value of 1 minute.
                         time.sleep(1)
 
             except Exception as e:
-                self.log("## bridge exception: {}".format(e))
+                self.log(f"## bridge exception: {e}")
                 time.sleep(5)
 
     def turn_all_on(self):
@@ -74,7 +74,7 @@ class TplinkServer:
                 plug.get_info()
                 if not plug.is_on:
                     all_on = False
-                    self.log("Turning on {}...".format(switch_ip))
+                    self.log(f"Turning on {switch_ip}...")
                     plug.turn_on()
                     time.sleep(1)  # do not switch them all at the same time
             if all_on:
@@ -92,7 +92,7 @@ class TplinkServer:
                 plug.get_info()
                 if plug.is_on:
                     all_off = False
-                    self.log("Turning off {}...".format(switch_ip))
+                    self.log(f"Turning off {switch_ip}...")
                     plug.turn_off()
                     time.sleep(1)  # do not switch them all at the same time
             if all_off:
@@ -105,14 +105,14 @@ class TplinkServer:
         for local_ip, switch_ip in self.plugs:
             plug = TplinkSmartPlug(local_ip, switch_ip)
             plug.get_info()
-            status += ["{}:{}".format(switch_ip, plug.is_on == 1)]
+            status += [f"{switch_ip}:{plug.is_on == 1}"]
         return ",".join(status)
 
 
 def find_local_ips(local_ip, server_name, server_port):
     server_addresses = socket.gethostbyname_ex(server_name)[2]
     hostname = socket.gethostname()
-    addresses = socket.gethostbyname_ex(hostname + ".local")[2]
+    addresses = socket.gethostbyname_ex(f"{hostname}.local")[2]
     if local_ip:
         addresses = [local_ip]
         if server_name.startswith("127.") or server_name == "localhost":
@@ -134,13 +134,12 @@ def find_local_ips(local_ip, server_name, server_port):
                     if pair not in good:
                         good += [pair]
             except:
-                print("Ignoring useless ip {}".format(ip))
+                print(f"Ignoring useless ip {ip}")
                 for i in range(len(good)):
                     if good[i][0]:
                         bad_ip += [ip]
                         del good[i]
                         break
-                pass
             s.close()
     return good
 
@@ -166,7 +165,7 @@ if __name__ == '__main__':
                 switches += [(args.local, "192.168.1.199")]
             else:
                 for local_ip, server_ip in find_local_ips(args.local, args.host, args.port):
-                    print("Searching network from ip address: {} ...".format(local_ip))
+                    print(f"Searching network from ip address: {local_ip} ...")
                     for addr in TplinkSmartPlug.findHS105Devices(local_ip):
                         if not found_server_ip:
                             found_server_ip = server_ip
@@ -177,16 +176,16 @@ if __name__ == '__main__':
                 print("Could not find your local HS105 switches", flush=True)
                 time.sleep(1)
             elif found_server_ip is None:
-                print("Cound not find Ada server {}".format(args.host))
+                print(f"Cound not find Ada server {args.host}")
             else:
-                print("Found switches at: {}".format([x[1] for x in switches]))
+                print(f"Found switches at: {[x[1] for x in switches]}")
                 local = switches[0][0]
-                print("Using local network on: {}".format(local))
+                print(f"Using local network on: {local}")
                 plug = TplinkServer(local, found_server_ip, args.port)
                 plug.start(switches)
                 print("Press CTRL+C to terminate...", flush=True)
                 while True:
                     time.sleep(1)
         except Exception as e:
-            print("Exception: {}".format(e), flush=True)
+            print(f"Exception: {e}", flush=True)
             time.sleep(1)

@@ -5,16 +5,13 @@ import numpy as np
 
 for name in os.listdir():
     if name.endswith(".csv"):
-        print("{}==========================================".format(name))
+        print(f"{name}==========================================")
         temp = pd.read_csv(name)
         for i in range(temp.shape[0]):
             row = temp.iloc[i]
 
-            scores = []
             emotions = ["neutral", "happiness", "sadness", "anger", "fear", "surprise", "disgust", "contempt"]
-            for key in emotions:
-                scores += [float(row[key])]
-
+            scores = [float(row[key]) for key in emotions]
             idx = np.argsort(scores)
 
             #print(["{}({:.2f})".format(se[i], scores[i]) for i in reversed(range(len(idx)))])

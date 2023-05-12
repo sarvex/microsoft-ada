@@ -34,14 +34,8 @@ class ClientHandler(socketserver.StreamRequestHandler):
     def get_sensei(self, cmd):
 
         parts = cmd.split(' ')
-        target = "adapi1"
-        sequence = 0
-
-        if len(parts) > 1:
-            target = parts[1]
-        if len(parts) > 2:
-            sequence = int(parts[2])
-
+        target = parts[1] if len(parts) > 1 else "adapi1"
+        sequence = int(parts[2]) if len(parts) > 2 else 0
         # cycle through the 3 colors every 4 seconds.
         index = (int)((time.time() - GlobalState.color_time) / 4) % 3
         command = {"command": "CrossFade", "colors": [GlobalState.colors[index]], "seconds": 4 }

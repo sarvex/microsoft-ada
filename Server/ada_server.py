@@ -69,12 +69,8 @@ class AdaServer:
         return result
 
     def idle(self):
-        is_idle = True
         self.lock.acquire()
-        for q in self.client_queues.values():
-            if q.size() > 0:
-                is_idle = False
-                break
+        is_idle = all(q.size() <= 0 for q in self.client_queues.values())
         self.lock.release()
         return is_idle
 
@@ -102,7 +98,7 @@ class AdaServer:
             x = self.sequence_numbers[name]
             y = self.sequence_numbers_sent[name]
             if abs(x - y) > self.max_animations_per_iteration and x > 0:
-                print("### found stale client: {}, seq# {} != {}".format(name, x, y))
+                print(f"### found stale client: {name}, seq# {x} != {y}")
                 result += [name]
         self.lock.release()
         return result
@@ -132,10 +128,8 @@ class AdaServer:
         return result
 
     def has_client_address(self, address):
-        result = False
         self.lock.acquire()
-        if address in self.client_queues:
-            result = True
+        result = address in self.client_queues
         self.lock.release()
         return result
 
@@ -178,7 +172,9 @@ class AdaServer:
                 self.sequence_numbers[target] = self.sequence
                 self.lock.release()
             else:
-                print("### dropping command to '{}' because this client is not connected".format(target))
+                print(
+                    f"### dropping command to '{target}' because this client is not connected"
+                )
         else:
             # this is a broadcast to all clients.
             for c in self.client_queues:
@@ -202,7 +198,7 @@ class AdaServer:
                 _thread.start_new_thread(self.client_thread, (client, address))
             s.close()
         except Exception as e:
-            print("## server terminating with exception: {}".format(e))
+            print(f"## server terminating with exception: {e}")
 
     def client_thread(self, client, address):
         """ a new thread is created to handle the heartbeats and command sending to each connected pi"""
@@ -219,7 +215,7 @@ class AdaServer:
             self.handle_client(client, address, name)
 
     def handle_client(self, client, address, name):
-        print("Client connected from {}: {}".format(address, name))
+        print(f"Client connected from {address}: {name}")
         if name in self.clients:
             try:
                 # we have a new socket for this client, which means we need to close the old one.
@@ -230,7 +226,7 @@ class AdaServer:
                 self.lock.release()
                 # and wait for the other thread to terminate
                 while self.has_client_address(address):
-                    print("waiting for previous {} thread to terminate...".format(name))
+                    print(f"waiting for previous {name} thread to terminate...")
                     time.sleep(1)
             except:
                 pass
@@ -253,8 +249,7 @@ class AdaServer:
             hash = self.firmware.get_hash()
             if hash and hash != firmware_hash:
                 firmware_hash = hash
-                client_queue.enqueue(0, [{"command": "FirmwareHash", "hash": hash}])
-
+                client_queue.enqueue(0, [{"command": "FirmwareHash", "hash": firmware_hash}])
             command = None
             result = client_queue.peek()
             if result is not None:
@@ -276,7 +271,7 @@ class AdaServer:
                     seconds = command["hold"]
                 elif "seconds" in command:
                     seconds = command["seconds"]
-                print("==== next command for {} in {} seconds".format(name, seconds))
+                print(f"==== next command for {name} in {seconds} seconds")
                 next_command_time = time.time() + seconds
 
                 while client_queue.size() > 5:
@@ -308,21 +303,18 @@ class AdaServer:
                             data = client.recv(16000)
                             msg = data.decode('utf-8').rstrip("\0")
 
-                        if msg != "ok":
-                            print("Unexpected response from {}: {}".format(name, msg))
-                            print("Trying again {}:".format(retries))
-                            time.sleep(1)
-                            retries -= 1
-                        else:
+                        if msg == "ok":
                             break
+                        print(f"Unexpected response from {name}: {msg}")
+                        print(f"Trying again {retries}:")
+                        time.sleep(1)
+                        retries -= 1
                 else:
                     # heart beat once a second.
                     cmd = "{\"command\": \"ping\"}"
                     client.sendall(bytes(cmd, 'utf-8'))
                     data = client.recv(16000)
-                    msg = data.decode('utf-8').rstrip("\0").strip()
-                    # response to ping is last client 'sequence' number.
-                    if msg:
+                    if msg := data.decode('utf-8').rstrip("\0").strip():
                         try:
                             msgno = int(msg)
                             changed = False
@@ -332,16 +324,16 @@ class AdaServer:
                                 changed = True
                             self.lock.release()
                             if changed:
-                                print("Client {} returned ping response {} and current sequence is {}".format(
-                                    name, msgno, self.sequence))
+                                print(
+                                    f"Client {name} returned ping response {msgno} and current sequence is {self.sequence}"
+                                )
                         except:
-                            print("Unexpected ping response from {}: {}".format(name, msg))
-                            pass
+                            print(f"Unexpected ping response from {name}: {msg}")
                     ping_time = time.time() + 1
 
             except socket.error as e:
                 client.close()
-                print("### socket error with pi {}: {}".format(name, e))
+                print(f"### socket error with pi {name}: {e}")
                 break
 
         self.lock.acquire()
@@ -358,12 +350,12 @@ class AdaServer:
         self.lock.release()
 
     def handle_camera(self, client, address, name):
-        print("Camera connected from {}: {}".format(address, name))
+        print(f"Camera connected from {address}: {name}")
         # the camera protocol is reversed so camera can push updates to us any time.
         # including a heartbeat ping every so often to keep the socket alive.
         while not self.closed:
             try:
-                msg = "{}".format(self.camera)
+                msg = f"{self.camera}"
                 client.sendall(bytes(msg, 'utf-8'))
                 data = client.recv(16000)
                 while len(data) == 0 and not self.closed:
@@ -372,16 +364,16 @@ class AdaServer:
                 if not self.closed:
                     msg = data.decode('utf-8')
                     if msg != "ping":
-                        print("### Camera: received " + msg)
+                        print(f"### Camera: received {msg}")
                         self.camera_queue.enqueue(0, msg)
 
             except socket.error as e:
                 client.close()
-                print("### socket error with camera {}: {}".format(name, e))
+                print(f"### socket error with camera {name}: {e}")
                 break
 
     def handle_switches(self, client, address, name):
-        print("HS105 bridge connected from {}: {}".format(address, name))
+        print(f"HS105 bridge connected from {address}: {name}")
         bridge = KasaBridgeClient(name, client, address, self.config.bridge_ping_interval)
         bridge.update_switch_status()
         self.bridge = bridge
@@ -402,8 +394,7 @@ async def async_read_enter(server):
     input_queue = PriorityQueue()
     _thread.start_new_thread(prompt_for_enter, (input_queue,))
     while True:
-        item = input_queue.dequeue()
-        if item:
+        if item := input_queue.dequeue():
             server.close()
             return
         else:
@@ -414,13 +405,12 @@ async def _main(config, sensei, ip_address):
     endpoint = (ip_address, config.server_port)
     msgbus = None
 
-    webpubsub_constr = os.getenv("ADA_WEBPUBSUB_CONNECTION_STRING")
-    if not webpubsub_constr:
-        print("Missing ADA_WEBPUBSUB_CONNECTION_STRING environment variable")
-        print("This means there will be no remote control Kiosk support")
-    else:
+    if webpubsub_constr := os.getenv("ADA_WEBPUBSUB_CONNECTION_STRING"):
         msgbus = WebPubSubGroup(webpubsub_constr, config.pubsub_hub, "server", config.pubsub_group)
         await msgbus.connect()
+    else:
+        print("Missing ADA_WEBPUBSUB_CONNECTION_STRING environment variable")
+        print("This means there will be no remote control Kiosk support")
     server = AdaServer(config, msgbus, endpoint)
     server.start()
     designer = LightingDesigner(server, msgbus, sensei, config)
@@ -435,8 +425,8 @@ def removeDisabledAnimations(condig):
     i = 0
     while i < len(config.cool_animations):
         c = config.cool_animations[i]
-        name = c["Name"]
         if "Enabled" in c and not c["Enabled"]:
+            name = c["Name"]
             print(f"Deleting disabled animation '{name}'")
             del config.cool_animations[i]
         else:
@@ -454,9 +444,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("ada_server makes Sensei database available to the ada raspberry pi devices")
     parser.add_argument("--ip", help="optional IP address of the server (default 'localhost')", default="localhost")
     parser.add_argument("--loop", help="Loop values from a file or not (default 'false')", action="store_true")
-    parser.add_argument("--delay", type=int, default=config.playback_delay,
-                        help="Timeout in seconds between each row of replay loop (default {})".format(
-                            config.playback_delay))
+    parser.add_argument(
+        "--delay",
+        type=int,
+        default=config.playback_delay,
+        help=f"Timeout in seconds between each row of replay loop (default {config.playback_delay})",
+    )
     args = parser.parse_args()
 
     connection_string = os.getenv("ADA_STORAGE_CONNECTION_STRING")

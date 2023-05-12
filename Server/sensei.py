@@ -43,21 +43,22 @@ class Sensei:
         self.connection_string = connection_string
 
     def start(self):
-        if not self.running:
-            if not self.connection_string:
-                print("Missing Sensei connection string")
-                return
+        if self.running:
+            return
+        if not self.connection_string:
+            print("Missing Sensei connection string")
+            return
 
-            try:
-                self.storage_account = TableService(connection_string=self.connection_string)
-            except:
-                print("Cannot connect to Sensei storage.")
-                return
+        try:
+            self.storage_account = TableService(connection_string=self.connection_string)
+        except:
+            print("Cannot connect to Sensei storage.")
+            return
 
-            self.running = True
-            self.stopping = False
-            self.start_time = time.time()
-            _thread.start_new_thread(self._fetch_data_and_compute_emotions_perodically, ())
+        self.running = True
+        self.stopping = False
+        self.start_time = time.time()
+        _thread.start_new_thread(self._fetch_data_and_compute_emotions_perodically, ())
 
     def stop(self):
         self.stopping = True
@@ -75,7 +76,7 @@ class Sensei:
         Load the historical data from the given directory, and play back each row
         at the given playback_delay in seconds.
         """
-        self.recorded_data = list()
+        self.recorded_data = []
         self.playback_delay = playback_delay
         self.playback_weights = playback_weights
         self.play_recording = True
@@ -83,8 +84,8 @@ class Sensei:
         for i in range(len(self.camera_zones)):
             zone = self.camera_zones[i]
             for name in zone:
-                filename = os.path.join(history_dir, "Grouped_by_Hour_{}.csv".format(name))
-                print("Loading: {}".format(filename))
+                filename = os.path.join(history_dir, f"Grouped_by_Hour_{name}.csv")
+                print(f"Loading: {filename}")
                 temp = pd.read_csv(filename)
                 rows = temp.shape[0]
                 if rows > self.max_rows:
@@ -134,15 +135,15 @@ class Sensei:
             query_results = list(self.storage_account.query_entities('Psi', filter=query, num_results=20, timeout=5))
             stop = time.time()
             if stop - start > 5:
-                print("### Cosmos is slow, {} took {} seconds".format(partition, stop - start))
+                print(f"### Cosmos is slow, {partition} took {stop - start} seconds")
 
             for entity in query_results:
                 for x in ['Face1', 'Face2', 'Face3', 'Face4', 'Face5']:
                     for sentiment in all_sentiments:
-                        key = '{}_{}'.format(x, sentiment)
+                        key = f'{x}_{sentiment}'
                         # not all samples have emotion data
                         if key in entity:
-                            sentiment_score = float(entity['%s_%s' % (x, sentiment)])
+                            sentiment_score = float(entity[f'{x}_{sentiment}'])
                             if face_sentiment[sentiment] == 0:
                                 face_sentiment[sentiment] = sentiment_score
                             else:
@@ -265,11 +266,7 @@ class Sensei:
             # then favor the other emotion over the more boring 'Neutral' emotions
             highest_emotion_and_values_per_zone = highest_other_emotion_and_values_per_zone
 
-        zones = []
-        for highest_ev in highest_emotion_and_values_per_zone:
-            zones += [highest_ev[0]]
-
-        return zones
+        return [highest_ev[0] for highest_ev in highest_emotion_and_values_per_zone]
 
     def _fetch_data_and_compute_emotions_perodically(self):
         while not self.stopping:
@@ -291,7 +288,7 @@ if __name__ == '__main__':
         d = json.load(f)
         config = namedtuple("Config", d.keys())(*d.values())
 
-    emotions = [key for key in config.colors_for_emotions]
+    emotions = list(config.colors_for_emotions)
 
     sensei = Sensei(config.camera_zones, emotions, config.connection_string, config.debug)
     args = parser.parse_args()

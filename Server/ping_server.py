@@ -9,7 +9,7 @@ def receive_rgb_lists_from_server(server_endpoint, buffer_size):
         sock.connect(server_endpoint)
         sock.sendall(bytes('GET\n', 'utf-8'))
         json_msg = ''
-        while len(json_msg) == 0:
+        while not json_msg:
             json_msg = str(sock.recv(buffer_size), "utf-8")
             command = json.loads(json_msg)
             if command["command"] == "sensei":
@@ -22,7 +22,7 @@ def receive_rgb_lists_from_server(server_endpoint, buffer_size):
 def update_server_with_ipcamera_emotion(server_endpoint, emotion, score):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect(server_endpoint)
-        sock.sendall(bytes('IPCAMERA {} {}\n'.format(emotion, score), 'utf-8'))
+        sock.sendall(bytes(f'IPCAMERA {emotion} {score}\n', 'utf-8'))
 
 
 if __name__ == "__main__":

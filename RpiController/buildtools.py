@@ -10,15 +10,13 @@ class BuildTools:
     def logstream(self, stream):
         try:
             while True:
-                out = stream.readline()
-                if out:
-                    msg = out.decode('utf-8')
-                    print(msg.strip('\r\n'))
-                else:
+                if not (out := stream.readline()):
                     break
+                msg = out.decode('utf-8')
+                print(msg.strip('\r\n'))
         except:
             errorType, value, traceback = sys.exc_info()
-            msg = "### Exception: %s: %s" % (str(errorType), str(value))
+            msg = f"### Exception: {str(errorType)}: {str(value)}"
             print(msg)
 
     def run(self, command, print_output=True, shell=False):
